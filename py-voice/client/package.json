@@ -1,0 +1,22 @@
+{
+  "name": "@pentrons/voice-client",
+  "version": "1.0.0",
+  "description": "TypeScript SDK + React hook for the Pentrons local voice server (STT/TTS) - Electron ready",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublish": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=17"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true }
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/react": "^18.2.0"
+  },
+  "license": "MIT"
+}

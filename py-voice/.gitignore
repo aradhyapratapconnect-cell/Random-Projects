@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ML model weights (downloaded via download_voices.py / faster-whisper)
+voice-server/models/
+*.wav
+
+# Node
+node_modules/
+client/dist/
+*.log
+
+# Misc
+curl_err.txt
+.DS_Store

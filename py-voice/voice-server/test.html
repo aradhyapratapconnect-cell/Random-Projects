@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Pentrons Voice Server - Test Page</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; background: #111; color: #eee; }
+  button { font-size: 16px; padding: 12px 20px; margin: 6px 6px 6px 0; border-radius: 10px; border: none; cursor: pointer; background: #4a7dff; color: white; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.rec { background: #e04444; }
+  input { width: 100%; padding: 12px; font-size: 16px; border-radius: 10px; border: 1px solid #444; background: #1c1c1c; color: #eee; }
+  .box { background: #1c1c1c; border: 1px solid #333; border-radius: 10px; padding: 16px; margin: 12px 0; min-height: 24px; }
+  h2 { border-bottom: 1px solid #333; padding-bottom: 6px; }
+  .ok { color: #4dd964; } .err { color: #ff6b6b; }
+</style>
+</head>
+<body>
+<h1>&#127908; Voice Server Test</h1>
+
+<h2>0. Server status</h2>
+<button onclick="check()">Check server</button>
+<div class="box" id="status">Not checked yet</div>
+
+<h2>1. Speech-to-Text (your microphone)</h2>
+<button id="recBtn" onclick="toggleRec()">Start recording (5 sec)</button>
+<div class="box" id="stt">Click the button and speak...</div>
+
+<h2>2. Text-to-Speech (your speakers)</h2>
+<input id="ttsText" value="Hello! I am your personal assistant." />
+<button onclick="speak()">Speak it</button>
+<div class="box" id="ttsStatus">Type something above and click Speak.</div>
+
+<script>
+const BASE = "http://127.0.0.1:8756";
+
+async function check() {
+  const el = document.getElementById("status");
+  try {
+    const r = await fetch(BASE + "/health");
+    const j = await r.json();
+    el.innerHTML = `<span class="ok">Server is running.</span> TTS voice: ${j.tts}. STT model: ${j.stt_loaded ? "loaded" : "loads on first use"}.`;
+  } catch (e) {
+    el.innerHTML = `<span class="err">Cannot reach server.</span> Is 'python main.py' running? (${e.message})`;
+  }
+}
+
+let mediaRecorder, chunks = [];
+async function toggleRec() {
+  const btn = document.getElementById("recBtn");
+  const out = document.getElementById("stt");
+  if (mediaRecorder && mediaRecorder.state === "recording") { mediaRecorder.stop(); return; }
+  try {
+    const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+    chunks = [];
+    mediaRecorder = new MediaRecorder(mic, { mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm" });
+    mediaRecorder.ondataavailable = e => e.data.size && chunks.push(e.data);
+    mediaRecorder.onstop = async () => {
+      mic.getTracks().forEach(t => t.stop());
+      btn.textContent = "Start recording (5 sec)"; btn.classList.remove("rec");
+      out.textContent = "Transcribing...";
+      try {
+        const fd = new FormData();
+        fd.append("file", new Blob(chunks, { type: mediaRecorder.mimeType }), "speech.webm");
+        const r = await fetch(BASE + "/stt", { method: "POST", body: fd });
+        const j = await r.json();
+        out.innerHTML = j.text ? `<b>You said:</b> &ldquo;${j.text}&rdquo; <span class="ok">(accuracy ${(j.confidence * 100).toFixed(0)}%${j.language ? ", " + j.language : ""})</span>` : `<span class="err">No speech detected - try again closer to the mic.</span>`;
+      } catch (e) { out.innerHTML = `<span class="err">STT failed: ${e.message}</span>`; }
+    };
+    mediaRecorder.start();
+    btn.textContent = "Recording... (click to stop)"; btn.classList.add("rec");
+    setTimeout(() => mediaRecorder.state === "recording" && mediaRecorder.stop(), 5000);
+  } catch (e) { out.innerHTML = `<span class="err">Mic access denied: ${e.message}</span>`; }
+}
+
+async function speak() {
+  const st = document.getElementById("ttsStatus");
+  st.textContent = "Generating + playing...";
+  try {
+    const r = await fetch(BASE + "/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: document.getElementById("ttsText").value }) });
+    if (!r.ok) throw new Error(await r.text());
+    const a = new Audio(URL.createObjectURL(await r.blob()));
+    await a.play();
+    st.innerHTML = `<span class="ok">Playing... if you hear the voice, TTS works.</span>`;
+    a.onended = () => st.innerHTML += " <b>Done.</b>";
+  } catch (e) { st.innerHTML = `<span class="err">TTS failed: ${e.message}</span>`; }
+}
+
+check();
+</script>
+</body>
+</html>
