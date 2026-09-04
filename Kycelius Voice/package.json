@@ -1,0 +1,51 @@
+{
+  "name": "kycelius-voice",
+  "productName": "Kycelius Voice",
+  "version": "1.0.0",
+  "description": "Advanced open-source STT + TTS voice engine for the Kycelius AI assistant. Electron + React + TypeScript + Tailwind CSS.",
+  "license": "MIT",
+  "author": "Kycelius",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/kycelius-voice"
+  },
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on tcp:127.0.0.1:5173 && cross-env KYCELIUS_DEV=1 electron .\"",
+    "build": "vite build && tsc -p electron/tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p electron/tsconfig.json",
+    "start": "npm run build && electron .",
+    "preview": "vite preview",
+    "dist": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.7.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.kycelius.voice",
+    "productName": "Kycelius Voice",
+    "files": ["dist/**", "dist-electron/**"],
+    "win": { "target": "nsis" },
+    "mac": { "target": "dmg" },
+    "linux": { "target": "AppImage" }
+  }
+}

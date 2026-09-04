@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-electron/
+release/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Env / local config
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model cache (downloaded during dev)
+.cache/
